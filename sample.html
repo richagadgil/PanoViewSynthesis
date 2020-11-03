@@ -1,0 +1,177 @@
+<html>
+    <head>
+        <title>My first three.js app</title>
+        <style>
+            body {
+                margin: 0;
+            }
+            canvas {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <script src="js/three.js"></script>
+        <script>
+            function main() {
+                var scene = new THREE.Scene();
+
+                const fov = 75;
+                const aspect = 2; // the canvas default
+                const near = 0.1;
+                const far = 5;
+                const camera = new THREE.PerspectiveCamera(
+                    fov,
+                    aspect,
+                    near,
+                    far
+                );
+                camera.position.z = 0.5;
+
+                var renderer = new THREE.WebGLRenderer();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(renderer.domElement);
+
+                var boxWidth = 1;
+                var boxHeight = 1;
+                var boxDepth = 1;
+
+                const cubes = []; // just an array we can use to rotate the cubes
+                const loader = new THREE.TextureLoader();
+
+                var depths;
+                var pics;
+                var order = [3, 1, 5, 6, 2, 4];
+
+                var test = 0;
+
+                var some_depths = [
+                    100,
+                    23.846155,
+                    13.537119,
+                    9.45122,
+                    7.259953,
+                    5.893536,
+                    4.96,
+                    4.281768,
+                    3.7667074,
+                    3.362256,
+                    3.0362391,
+                    2.7678573,
+                    2.5430682,
+                    2.3520486,
+                    2.1877205,
+                    2.0448549,
+                    1.9195048,
+                    1.808635,
+                    1.7098732,
+                    1.6213388,
+                    1.5415217,
+                    1.4691944,
+                    1.40335,
+                    1.3431542,
+                    1.2879103,
+                    1.2370312,
+                    1.1900192,
+                    1.1464497,
+                    1.105958,
+                    1.0682288,
+                    1.032989,
+                    1
+                ]; //.reverse();
+
+                for (depths = 0; depths < 32; depths++) {
+                    var materials = [];
+                    for (pics = 0; pics < 1; pics++) {
+                        materials.push(
+                            new THREE.MeshBasicMaterial({
+                                map: loader.load(
+                                    'layers/image' +
+                                        order[pics].toString() +
+                                        '_' +
+                                        depths.toString() +
+                                        '.png'
+                                ),
+                                side: THREE.BackSide,
+                                transparent: true,
+                                depthWrite: false,
+                                blending: THREE.NormalBlending
+                            })
+                        );
+                    }
+
+                    //boxWidth = boxWidth + 0.2;
+                    //boxHeight = boxHeight + 0.2;
+                    //boxDepth = -some_depths[depths];
+                    //console.log(some_depths[depths] / 100);
+
+                    const geometry = new THREE.BoxBufferGeometry(
+                        boxWidth,
+                        boxHeight,
+                        boxDepth
+                    );
+
+                    geometry.scale(1, 1, some_depths[depths]);
+                    geometry.translate(0, 0, -some_depths[depths]);
+                    const cube = new THREE.Mesh(
+                        //geometry.scale(0, 0, 0),
+                        geometry,
+                        materials
+                    );
+                    //console.log(cube);
+                    scene.add(cube);
+                    cubes.push(cube);
+                    //cube.position.set(-0.5, 0, 0);
+                }
+
+                //console.log(cubes);
+
+                var theta = 0.0;
+
+                function setView(cube, x, y) {
+                    x = 2 * x - 1;
+                    y = 2 * y - 1;
+                    rx = (-1.5 * y).toFixed(2);
+                    ry = (2.0 * x).toFixed(2);
+                    // Put whatever CSS transform you want in here.
+                    //console.log(cube.rotation.x);
+                    cube.rotation.x += rx;
+                    cube.rotation.y += ry;
+                    cube.rotation.z += 500;
+                    cube.scale.z = 500;
+                }
+
+                var t = 0;
+
+                cubes.forEach((cube, ndx) => {
+                    //setView(cube, 0.5, 0.5);
+                    //console.log(cube);
+                    //requestAnimationFrame(animate);
+                });
+
+                var animate = function() {
+                    requestAnimationFrame(animate);
+                    var to_be = cubes.forEach((cube, ndx) => {
+                        //cube.rotation.z = 1 + Math.sin(theta) / 5;
+                        cube.rotation.y += 0.01;
+                        /*t = (t + 1) % 300;
+                        r = (Math.PI * 2 * t) / 300;
+
+                        setView(
+                            cube,
+                            0.5 + 0.3 * Math.cos(r),
+                            0.5 + 0.3 * Math.sin(r)
+                        );*/
+                        requestAnimationFrame(animate);
+                    });
+                    theta += 0.05;
+                    renderer.render(scene, camera);
+                };
+
+                animate();
+            }
+
+            main();
+        </script>
+    </body>
+</html>

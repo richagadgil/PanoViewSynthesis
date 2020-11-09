@@ -80,13 +80,15 @@
                     1
                 ]; //.reverse();
 
+                var random = 0;
+
                 for (depths = 0; depths < 32; depths++) {
                     var materials = [];
-                    for (pics = 0; pics < 1; pics++) {
+                    for (pics = 0; pics < 6; pics++) {
                         materials.push(
                             new THREE.MeshBasicMaterial({
                                 map: loader.load(
-                                    'layers/image' +
+                                    'http://0.0.0.0:8000/layers/image' +
                                         order[pics].toString() +
                                         '_' +
                                         depths.toString() +
@@ -100,33 +102,21 @@
                         );
                     }
 
-                    //boxWidth = boxWidth + 0.2;
-                    //boxHeight = boxHeight + 0.2;
-                    //boxDepth = -some_depths[depths];
-                    //console.log(some_depths[depths] / 100);
-
                     const geometry = new THREE.BoxBufferGeometry(
                         boxWidth,
                         boxHeight,
                         boxDepth
                     );
 
-                    geometry.scale(1, 1, some_depths[depths]);
-                    geometry.translate(0, 0, -some_depths[depths]);
-                    const cube = new THREE.Mesh(
-                        //geometry.scale(0, 0, 0),
-                        geometry,
-                        materials
-                    );
-                    //console.log(cube);
+                    //geometry.scale(1, 1, some_depths[depths]);
+                    //geometry.translate(0, 0, -some_depths[depths] / 10);
+
+                    const cube = new THREE.Mesh(geometry, materials);
+                    cube.rotation.y = 1.6;
+
                     scene.add(cube);
                     cubes.push(cube);
-                    //cube.position.set(-0.5, 0, 0);
                 }
-
-                //console.log(cubes);
-
-                var theta = 0.0;
 
                 function setView(cube, x, y) {
                     x = 2 * x - 1;
@@ -134,37 +124,34 @@
                     rx = (-1.5 * y).toFixed(2);
                     ry = (2.0 * x).toFixed(2);
                     // Put whatever CSS transform you want in here.
-                    //console.log(cube.rotation.x);
-                    cube.rotation.x += rx;
-                    cube.rotation.y += ry;
-                    cube.rotation.z += 500;
-                    cube.scale.z = 500;
+                    cube.rotateX(rx * (Math.PI / 180));
+                    cube.rotateY(ry * (Math.PI / 180));
+                    //cube.scale.z = 2;
+                    //cube.translate.z = 80000;
+                    //cube.translateZ(5 / 100);
                 }
 
                 var t = 0;
-
-                cubes.forEach((cube, ndx) => {
-                    //setView(cube, 0.5, 0.5);
-                    //console.log(cube);
-                    //requestAnimationFrame(animate);
-                });
+                var i = 0;
 
                 var animate = function() {
                     requestAnimationFrame(animate);
-                    var to_be = cubes.forEach((cube, ndx) => {
-                        //cube.rotation.z = 1 + Math.sin(theta) / 5;
-                        cube.rotation.y += 0.01;
-                        /*t = (t + 1) % 300;
-                        r = (Math.PI * 2 * t) / 300;
+                    if (i % 10 == 0) {
+                        cubes.forEach((cube, ndx) => {
+                            //cube.rotation.z = 1 + Math.sin(theta) / 5;
+                            //cube.rotation.y += 0.01;
 
-                        setView(
-                            cube,
-                            0.5 + 0.3 * Math.cos(r),
-                            0.5 + 0.3 * Math.sin(r)
-                        );*/
-                        requestAnimationFrame(animate);
-                    });
-                    theta += 0.05;
+                            t = (t + 1) % 300;
+                            r = (Math.PI * 2 * t) / 300;
+
+                            setView(
+                                cube,
+                                0.5 + 0.3 * Math.cos(r),
+                                0.5 + 0.3 * Math.sin(r)
+                            );
+                        });
+                    }
+                    i += 1;
                     renderer.render(scene, camera);
                 };
 

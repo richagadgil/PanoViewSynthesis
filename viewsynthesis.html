@@ -19,14 +19,14 @@
                 const fov = 75;
                 const aspect = 2; // the canvas default
                 const near = 0.1;
-                const far = 5;
+                const far = 200;
                 const camera = new THREE.PerspectiveCamera(
                     fov,
                     aspect,
                     near,
                     far
                 );
-                camera.position.z = 0.5;
+                camera.position.z = 0;
 
                 var renderer = new THREE.WebGLRenderer();
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -103,16 +103,16 @@
                     }
 
                     const geometry = new THREE.BoxBufferGeometry(
-                        boxWidth,
-                        boxHeight,
-                        boxDepth
+                        boxWidth * some_depths[depths],
+                        boxHeight * some_depths[depths],
+                        boxDepth * some_depths[depths]
                     );
 
                     //geometry.scale(1, 1, some_depths[depths]);
                     //geometry.translate(0, 0, -some_depths[depths] / 10);
 
                     const cube = new THREE.Mesh(geometry, materials);
-                    cube.rotation.y = 1.6;
+                    //cube.rotation.y = 1.6;
 
                     scene.add(cube);
                     cubes.push(cube);
@@ -137,7 +137,7 @@
                 var animate = function() {
                     requestAnimationFrame(animate);
                     if (i % 10 == 0) {
-                        cubes.forEach((cube, ndx) => {
+                        /*cubes.forEach((cube, ndx) => {
                             //cube.rotation.z = 1 + Math.sin(theta) / 5;
                             //cube.rotation.y += 0.01;
 
@@ -149,7 +149,10 @@
                                 0.5 + 0.3 * Math.cos(r),
                                 0.5 + 0.3 * Math.sin(r)
                             );
-                        });
+                        });*/
+
+                        camera.position.x = 0.05 * Math.sin(i / (10 * Math.PI));
+                        camera.rotation.y = i / (500 * Math.PI);
                     }
                     i += 1;
                     renderer.render(scene, camera);

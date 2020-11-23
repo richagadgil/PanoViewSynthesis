@@ -1,51 +1,52 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head>
-        <title>My first three.js app</title>
-        <style>
-            body {
-                margin: 0;
-            }
-            canvas {
-                display: block;
-            }
-        </style>
+        <title>cube map mpi example</title>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=no"
+        />
+        <link type="text/css" rel="stylesheet" href="main.css" />
     </head>
     <body>
+        <div id="container"></div>
+
         <script src="js/three.js"></script>
         <script type="module">
             import { VRButton } from './js/VRButton.js';
 
-            function main() {
-                var scene = new THREE.Scene();
+            let camera, scene, renderer, sphere, clock;
 
-                const fov = 75;
-                const aspect = 2; // the canvas default
-                const near = 0.1;
-                const far = 200;
-                const camera = new THREE.PerspectiveCamera(
-                    fov,
-                    aspect,
-                    near,
-                    far
+            init();
+
+            function init() {
+                const container = document.getElementById('container');
+
+                clock = new THREE.Clock();
+
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x101010);
+
+                const light = new THREE.AmbientLight(0xffffff, 1);
+                scene.add(light);
+
+                camera = new THREE.PerspectiveCamera(
+                    70,
+                    window.innerWidth / window.innerHeight,
+                    1,
+                    2000
                 );
-                camera.position.z = 0;
-
-                var renderer = new THREE.WebGLRenderer();
-                renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                document.body.appendChild(renderer.domElement);
-                renderer.xr.enabled = true;
-                renderer.xr.setReferenceSpaceType('local');
-                renderer.setAnimationLoop( function () { renderer.render( scene, camera ); } );
-                document.body.appendChild( VRButton.createButton( renderer ) );
+                scene.add(camera);
 
                 var boxWidth = 1;
                 var boxHeight = 1;
                 var boxDepth = 1;
 
-                const cubes = []; // just an array we can use to rotate the cubes
-                const loader = new THREE.TextureLoader();
+                const manager = new THREE.LoadingManager();
+                const loader = new THREE.TextureLoader(manager);
 
+                var cubes = [];
                 var depths;
                 var pics;
                 var order = [3, 1, 5, 6, 2, 4];
@@ -99,7 +100,7 @@
                                 ),
                                 side: THREE.BackSide,
                                 transparent: true,
-                                depthWrite: false,
+                                depthWrite: true,
                                 blending: THREE.NormalBlending
                             })
                         );
@@ -113,13 +114,34 @@
 
                     const cube = new THREE.Mesh(geometry, materials);
 
-                    scene.add(cube);
-                    cubes.push(cube);
+                    cubes.push(cube)
                 }
 
+                manager.onLoad = function() {
+                    for (depths = 0; depths < 32; depths++) {
+                        scene.add(cubes[depths]);
+                    }
+                };
+
+                renderer = new THREE.WebGLRenderer();
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.xr.enabled = true;
+                renderer.xr.setReferenceSpaceType('local');
+                renderer.setAnimationLoop( function () { renderer.render( scene, camera ); } );
+
+                container.appendChild(renderer.domElement);
+                document.body.appendChild( VRButton.createButton( renderer ) );
+
+                window.addEventListener('resize', onWindowResize, false);
             }
 
-            main();
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
         </script>
     </body>
 </html>

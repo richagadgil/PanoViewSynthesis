@@ -37,6 +37,7 @@
                 renderer.xr.enabled = true;
                 renderer.xr.setReferenceSpaceType('local');
                 renderer.setAnimationLoop( function () { renderer.render( scene, camera ); } );
+                document.body.appendChild( VRButton.createButton( renderer ) );
 
                 var boxWidth = 1;
                 var boxHeight = 1;

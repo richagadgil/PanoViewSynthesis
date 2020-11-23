@@ -127,7 +127,7 @@
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;
-                renderer.xr.setReferenceSpaceType('local');
+                renderer.xr.setReferenceSpaceType('local-floor');
                 renderer.setAnimationLoop( function () { renderer.render( scene, camera ); } );
 
                 container.appendChild(renderer.domElement);

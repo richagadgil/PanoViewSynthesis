@@ -19,7 +19,6 @@
             let camera, scene, renderer, sphere, clock;
 
             init();
-            animate();
 
             function init() {
                 const container = document.getElementById('container');
@@ -128,10 +127,8 @@
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;
-                renderer.xr.setReferenceSpaceType('viewer');
-                renderer.setAnimationLoop(function() {
-                    renderer.render(scene, camera);
-                });
+                renderer.xr.setReferenceSpaceType('local');
+                renderer.setAnimationLoop(render);
 
                 container.appendChild(renderer.domElement);
                 document.body.appendChild(VRButton.createButton(renderer));
@@ -144,10 +141,6 @@
                 camera.updateProjectionMatrix();
 
                 renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-
-            function animate() {
-                renderer.setAnimationLoop(render);
             }
 
             function render() {

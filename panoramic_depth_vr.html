@@ -65,7 +65,9 @@
                     sphere.material.map = texture;
                 });
 
-                loader.load('./depth_map_equirectangular.png', function(depth) {
+                loader.load('./mpi_depth_map_equirectangular.png', function(
+                    depth
+                ) {
                     depth.minFilter = THREE.NearestFilter;
                     depth.generateMipmaps = false;
                     sphere.material.displacementMap = depth;

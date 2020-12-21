@@ -39,10 +39,13 @@
                 scene.add(camera);
 
                 // Create the panoramic sphere geometery
-                const panoSphereGeo = new THREE.SphereBufferGeometry(
-                    6,
-                    256,
-                    256
+                const panoSphereGeo = new THREE.CylinderGeometry(
+                    500,
+                    500,
+                    1000,
+                    64,
+                    1,
+                    true
                 );
 
                 // Create the panoramic sphere material
@@ -58,19 +61,23 @@
                 const manager = new THREE.LoadingManager();
                 const loader = new THREE.TextureLoader(manager);
 
-                loader.load('./assets/equirectangular.jpg', function(texture) {
-                    texture.minFilter = THREE.NearestFilter;
-                    texture.generateMipmaps = false;
-                    sphere.material.map = texture;
-                });
+                loader.load(
+                    './assets/cylindrical_assets/courtyard_resize.png',
+                    function(texture) {
+                        texture.minFilter = THREE.NearestFilter;
+                        texture.generateMipmaps = false;
+                        sphere.material.map = texture;
+                    }
+                );
 
-                loader.load('./assets/depth_map_equirectangular.png', function(
-                    depth
-                ) {
-                    depth.minFilter = THREE.NearestFilter;
-                    depth.generateMipmaps = false;
-                    sphere.material.displacementMap = depth;
-                });
+                loader.load(
+                    './assets/cylindrical_assets/depth_map.png',
+                    function(depth) {
+                        depth.minFilter = THREE.NearestFilter;
+                        depth.generateMipmaps = false;
+                        sphere.material.displacementMap = depth;
+                    }
+                );
 
                 // On load complete add the panoramic sphere to the scene
                 manager.onLoad = function() {

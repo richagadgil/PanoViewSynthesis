@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>cube map mpi example</title>
+        <title>cylinder map mpi example</title>
         <meta charset="utf-8" />
         <meta
             name="viewport"
@@ -46,10 +46,9 @@
                 const manager = new THREE.LoadingManager();
                 const loader = new THREE.TextureLoader(manager);
 
-                var cubes = [];
+                var cylinders = [];
                 var depths;
                 var pics;
-                var order = [3, 1, 5, 6, 2, 4];
 
                 var some_depths = [
                     100,
@@ -87,39 +86,38 @@
                 ];
 
                 for (depths = 0; depths < 32; depths++) {
-                    var materials = [];
-                    for (pics = 0; pics < 6; pics++) {
-                        materials.push(
-                            new THREE.MeshBasicMaterial({
-                                map: loader.load(
-                                    './assets/layers/image' +
-                                        order[pics].toString() +
-                                        '_' +
-                                        depths.toString() +
-                                        '.png'
-                                ),
-                                side: THREE.BackSide,
-                                transparent: true,
-                                depthWrite: true,
-                                blending: THREE.NormalBlending
-                            })
-                        );
-                    }
+                    const panoSphereMat = new THREE.MeshBasicMaterial({
+                        map: loader.load(
+                            './assets/cylindrical_layers/courtyard_' +
+                                depths.toString() +
+                                '.png'
+                        ),
+                        side: THREE.BackSide,
+                        transparent: true,
+                        depthWrite: true,
+                        blending: THREE.NormalBlending
+                    });
 
-                    const geometry = new THREE.BoxBufferGeometry(
-                        boxWidth * some_depths[depths],
-                        boxHeight * some_depths[depths],
-                        boxDepth * some_depths[depths]
+                    const panoSphereGeo = new THREE.CylinderGeometry(
+                        500 * some_depths[depths],
+                        500 * some_depths[depths],
+                        1000 * some_depths[depths],
+                        360,
+                        1,
+                        true
                     );
 
-                    const cube = new THREE.Mesh(geometry, materials);
+                    const cylinder = new THREE.Mesh(
+                        panoSphereGeo,
+                        panoSphereMat
+                    );
 
-                    cubes.push(cube);
+                    cylinders.push(cylinder);
                 }
 
                 manager.onLoad = function() {
                     for (depths = 0; depths < 32; depths++) {
-                        scene.add(cubes[depths]);
+                        scene.add(cylinders[depths]);
                     }
                 };
 

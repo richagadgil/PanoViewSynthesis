@@ -40,18 +40,18 @@
 
                 // Create the panoramic sphere geometery
                 const panoSphereGeo = new THREE.CylinderGeometry(
-                    500,
-                    500,
-                    1000,
+                    6,
+                    6,
+                    6,
+                    1024,
                     64,
-                    1,
                     true
                 );
 
                 // Create the panoramic sphere material
                 const panoSphereMat = new THREE.MeshStandardMaterial({
                     side: THREE.BackSide,
-                    displacementScale: -4.0
+                    displacementScale: -1.0
                 });
 
                 // Create the panoramic sphere mesh

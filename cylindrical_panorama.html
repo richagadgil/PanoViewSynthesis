@@ -18,7 +18,6 @@
             let camera, scene, renderer, sphere, clock;
 
             init();
-            animate();
 
             function init() {
                 const container = document.getElementById('container');
@@ -88,10 +87,12 @@
                 renderer = new THREE.WebGLRenderer();
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.xr.enabled = true;
                 renderer.xr.setReferenceSpaceType('local');
                 container.appendChild(renderer.domElement);
+
                 document.body.appendChild(VRButton.createButton(renderer));
+                renderer.xr.enabled = true;
+                renderer.setAnimationLoop(render);
 
                 //
 

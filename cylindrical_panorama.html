@@ -40,11 +40,11 @@
 
                 // Create the panoramic sphere geometery
                 const panoSphereGeo = new THREE.CylinderGeometry(
-                    500,
-                    500,
-                    1000,
-                    64,
-                    1,
+                    6 * some_depths[depths],
+                    6 * some_depths[depths],
+                    6 * some_depths[depths],
+                    360,
+                    180,
                     true
                 );
 
@@ -114,14 +114,14 @@
                 if (renderer.xr.isPresenting === false) {
                     const time = clock.getElapsedTime();
 
-                    sphere.rotation.y += 0.001;
-                    sphere.position.x = Math.sin(time) * 0.2;
-                    sphere.position.z = Math.cos(time) * 0.2;
-
                     /*camera.position.x = 0.05 * Math.sin(i / (100 * Math.PI));
                     camera.rotation.y = i / (50 * Math.PI);
 
                     i += 1;*/
+
+                    camera.rotation.y += 0.001;
+                    camera.position.x = Math.sin(time) * 0.2;
+                    camera.position.z = Math.cos(time) * 0.2;
                 }
 
                 renderer.render(scene, camera);

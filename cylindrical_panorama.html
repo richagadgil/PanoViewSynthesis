@@ -13,11 +13,11 @@
         <div id="container"></div>
 
         <script src="js/three.js"></script>
-        <script>
+        <script type="module">
+            import { VRButton } from './js/VRButton.js';
             let camera, scene, renderer, sphere, clock;
 
             init();
-            animate();
 
             function init() {
                 const container = document.getElementById('container');
@@ -40,11 +40,11 @@
 
                 // Create the panoramic sphere geometery
                 const panoSphereGeo = new THREE.CylinderGeometry(
-                    6 * some_depths[depths],
-                    6 * some_depths[depths],
-                    6 * some_depths[depths],
-                    360,
-                    180,
+                    6,
+                    6,
+                    6,
+                    1024,
+                    64,
                     true
                 );
 
@@ -87,9 +87,12 @@
                 renderer = new THREE.WebGLRenderer();
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.xr.enabled = true;
                 renderer.xr.setReferenceSpaceType('local');
                 container.appendChild(renderer.domElement);
+
+                document.body.appendChild(VRButton.createButton(renderer));
+                renderer.xr.enabled = true;
+                renderer.setAnimationLoop(render);
 
                 //
 

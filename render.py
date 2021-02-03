@@ -45,6 +45,7 @@ if __name__ == '__main__':
         meshes = [Cylinder(bottom=-1*depth,top=1*depth,radius=depth,texturepath=os.path.join(args.path,'courtyard_%d.png'%i)) for i,depth in enumerate(depths)]
     else:
         meshes = [Plane(depth=depth,texturepath=os.path.join(args.path,'image1_%d.png'%i)) for i,depth in enumerate(depths)]
+    #meshes = meshes[0:1]
     
     renderer = Renderer(meshes,width=width,height=height)
 
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     def do_render():
         #print(time.time()-time0)
         t = (time.time() - time0)/10
-        eye = np.array([np.sin(t*10)/10,0,0])
+        eye = np.array([np.sin(t*10)/3,0,0])
         #eye = np.array([0,0,0])
         up = np.array([0,1,0])
         #target = eye+np.array([0,0,-1])

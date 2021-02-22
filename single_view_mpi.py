@@ -104,12 +104,8 @@ def generate_mpi(input_dir, output_dir, output_height, output_width, padding):
         right = input_rgb[:, y_val-padding:y_val]
 
         input_rgb = np.concatenate((right, input_rgb, left), axis=1)
-        plt.imshow(input_rgb)
-        print(input_rgb.shape)
 
-        import matplotlib.pyplot as plt
-        import numpy as np
-        plt.rcParams["figure.figsize"] = (20, 10)
+       # plt.rcParams["figure.figsize"] = (20, 10)
 
         # Input image
         #inputfile = 'courtyard.png'
@@ -120,7 +116,7 @@ def generate_mpi(input_dir, output_dir, output_height, output_width, padding):
         #input_rgb = tf.clip_by_value(tf.image.resize(input_rgb, (1024, 8192), method='gaussian'), 0.0, 1.0)
         # different powers of 2
 
-        plt.imshow(input_rgb)
+        # plt.imshow(input_rgb)
 
         # Generate MPI
         layers = model(input_rgb[tf.newaxis])[0]
@@ -133,19 +129,19 @@ def generate_mpi(input_dir, output_dir, output_height, output_width, padding):
         # Depths is a tensor of shape [L] which gives the depths of the L layers.
 
         # Display layer images
-        for i in range(32):
-            plt.subplot(4, 8, i+1)
-            plt.imshow(layers[i])
-            plt.axis('off')
-            plt.title('Layer %d' % i, loc='left')
-        plt.show()
+        # for i in range(32):
+        #    plt.subplot(4, 8, i+1)
+        #    plt.imshow(layers[i])
+        #    plt.axis('off')
+        #    plt.title('Layer %d' % i, loc='left')
+        # plt.show()
 
         # Display computed disparity
         disparity = mpi.disparity_from_layers(layers, depths)
-        plt.imshow(disparity[..., 0])
-        plt.axis('off')
-        plt.title('Synthesized disparity')
-        plt.show()
+        #plt.imshow(disparity[..., 0])
+        # plt.axis('off')
+        #plt.title('Synthesized disparity')
+        # plt.show()
 
         plt.imsave(f'{output_dir}/depth_map_{pano_num}.png',
                    disparity[..., 0][:, padding:output_width-padding], cmap='gray')

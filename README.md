@@ -18,3 +18,7 @@ To view in browser (Firefox is optimal) :
 * Unity Scripts
   * ProMesh.cs : Procedurally generates cylinder objects and materials using `Skybox/PanoramicBeta` shaders. One public variable for the folder name of all textures (should be in `Resources/` folder within Unity Project... `Resources/layers/courtyard_0`)
   * PanoramicBeta.shader : Custom 'Skybox/PanoramicBeta' shader
+
+Single View MPI Generation:
+ * single_view_mpi.sh : Downloads required code assets
+ * single_view_mpi.py : runs script, takes in padding, output dir, input dir, and output width/height

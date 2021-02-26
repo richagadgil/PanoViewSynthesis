@@ -77,6 +77,7 @@ import os
 import tensorflow as tf
 from single_view_mpi.libs import mpi
 from single_view_mpi.libs import nets
+
 def generate_mpi(input_dir, output_dir, output_height, output_width, padding):
     input = tf.keras.Input(shape=(None, None, 3))
     output = nets.mpi_from_image(input)
@@ -90,7 +91,7 @@ def generate_mpi(input_dir, output_dir, output_height, output_width, padding):
 
     """# Alter Image"""
 
-    for pano_num, f in os.listdir():
+    for pano_num, f in os.listdir(input_dir):
         inputfile = f'{input_dir}/{f}'
         input_rgb = tf.image.decode_image(
             tf.io.read_file(inputfile), dtype=tf.float32)
@@ -162,7 +163,7 @@ if __name__ == '__main__':
     import os
 
     parser = ArgumentParser(
-        description='Generate Single View MPIs'
+        description='Generate Depth Maps'
     )
 
     parser.add_argument('--input',
@@ -189,9 +190,9 @@ if __name__ == '__main__':
     # verify/create the output directory
 
     try:
-        os.makedirs(args.output_dir)
+        os.makedirs(args.output)
     except:
         pass
 
-    generate_mpi(args.input_dir, args.output_dir,
+    generate_mpi(args.input, args.output,
                  args.output_height, args.output_width, args.padding)

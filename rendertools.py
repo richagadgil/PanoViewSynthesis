@@ -136,11 +136,12 @@ class Plane(Mesh):
         self.texture = np.flipud(self.texture)
 
 class Renderer:
-    def __init__(self,meshes,width,height):
+    def __init__(self,meshes,width,height,offscreen=False):
         self.meshes = meshes
         self.width = width
         self.height = height
-
+        self.offscreen = offscreen
+    
         shaderDict = {GL_VERTEX_SHADER: vert, GL_FRAGMENT_SHADER: frag}
         
         self.initializeShaders(shaderDict)
@@ -155,7 +156,8 @@ class Renderer:
         glDepthRange(0.0, 1.0)
         
         # With all of our data defined, we can initialize our VBOs, FBO, and VAO to the OpenGL context to prepare for rendering
-        #self.initializeFramebufferObject()
+        if self.offscreen:
+            self.initializeFramebufferObject()
 
         for mesh in self.meshes:
             mesh.initializeVertexBuffer()
@@ -244,6 +246,9 @@ class Renderer:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
     
     def render(self,mvp):
+        if self.offscreen:
+            glBindFramebuffer(GL_FRAMEBUFFER, self.framebufferObject)
+
         self.configureShaders(mvp)
 
         glEnable(GL_BLEND)
@@ -262,12 +267,13 @@ class Renderer:
 
         glUseProgram(0)
 
-        #glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        #glReadBuffer(GL_COLOR_ATTACHMENT0)
-        #data = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_FLOAT)
-        #rendering = np.frombuffer(data, dtype = np.float32).reshape(self.height, self.width, 3)
+        if self.offscreen:
+            glPixelStorei(GL_PACK_ALIGNMENT, 1)
+            glReadBuffer(GL_COLOR_ATTACHMENT0)
+            data = glReadPixels(0, 0, self.width, self.height, GL_RGB, GL_UNSIGNED_BYTE)
+            rendering = np.frombuffer(data, dtype = np.uint8).reshape(self.height, self.width, 3)
 
-        #return np.flipud(rendering)
+            return np.flipud(rendering)
 
 def normalize(vec):
     return vec / np.linalg.norm(vec)

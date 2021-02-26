@@ -2,14 +2,13 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 import time
 
-#import pygame as pg
-#from pygame.locals import *
-
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 
 from rendertools import *
+
+from imageio import imwrite
 
 import argparse
 
@@ -17,6 +16,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('path')
     parser.add_argument('--mode',default='cylindrical')
+    parser.add_argument('--offscreen',action='store_true')
     args = parser.parse_args()
     
     width = 640
@@ -28,14 +28,8 @@ if __name__ == '__main__':
     glutInitWindowSize(width,height)
     glutInitWindowPosition(0,0)
     window = glutCreateWindow('window')
-    #glutHideWindow()
-    #pg.init()
-    #pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
-    #pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 2)
-    #pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK,
-                                #pg.GL_CONTEXT_PROFILE_CORE)
-    #pg.display.set_mode((width,height), DOUBLEBUF|OPENGL)
-
+    if args.offscreen:
+        glutHideWindow(window)
     
     min_depth = 1.
     max_depth = 100.
@@ -45,18 +39,27 @@ if __name__ == '__main__':
         meshes = [Cylinder(bottom=-1*depth,top=1*depth,radius=depth,texturepath=os.path.join(args.path,'courtyard_%d.png'%i)) for i,depth in enumerate(depths)]
     else:
         meshes = [Plane(depth=depth,texturepath=os.path.join(args.path,'image1_%d.png'%i)) for i,depth in enumerate(depths)]
-    #meshes = meshes[0:1]
     
-    renderer = Renderer(meshes,width=width,height=height)
+    renderer = Renderer(meshes,width=width,height=height,offscreen=args.offscreen)
+    
+    if args.offscreen:
+        eye = np.array([0,0,0])
+        target = np.array([0,0,-1])
+        up = np.array([0,1,0])
+        view_matrix = lookAt(eye,target,up)
+        proj_matrix = perspective(fovy, width/height, 0.1, 1000.0)
+        mvp_matrix = proj_matrix@view_matrix
+
+        image = renderer.render(mvp_matrix)
+        imwrite('output.png',image)
+
+        sys.exit(0)
 
     time0 = time.time()
     def do_render():
-        #print(time.time()-time0)
         t = (time.time() - time0)/10
         eye = np.array([np.sin(t*10)/3,0,0])
-        #eye = np.array([0,0,0])
         up = np.array([0,1,0])
-        #target = eye+np.array([0,0,-1])
         target = eye+np.array([np.sin(t),0,-np.cos(t)])
 
         view_matrix = lookAt(eye,target,up)
@@ -82,13 +85,3 @@ if __name__ == '__main__':
     glutKeyboardFunc(keyboard)
     glutMainLoop()
 
-    #while True:
-        #for event in pg.event.get():
-            #if event.type == pg.QUIT:
-                #pg.quit()
-                #quit()
-    #
-    #renderer.render(mvp_matrix)
-    #
-    #pg.display.flip()
-    #pg.time.wait(10)

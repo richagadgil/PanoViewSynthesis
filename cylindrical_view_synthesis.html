@@ -141,20 +141,23 @@
 
                 renderer.setSize(window.innerWidth, window.innerHeight);
             }
-
+            
+            var time = clock.getElapsedTime();
+            
             function render() {
                 // If we are not presenting move the camera a little so the effect is visible
 
                 if (renderer.xr.isPresenting === false) {
-                    const time = clock.getElapsedTime();
+                    const new_time = clock.getElapsedTime();
+                    var elapsed = new_time - time;
+                    time = new_time;
 
                     /*camera.rotation.y += 0.001;
                     camera.position.x = Math.sin(time) * 0.05;
                     camera.position.z = Math.cos(time) * 0.05;*/
 
-                    camera.rotation.y += 0.01;
-                    camera.position.x = Math.sin(time) * 0.2;
-                    camera.position.z = Math.cos(time) * 0.2;
+                    camera.rotation.y = elapsed/10.;
+                    camera.position.x = Math.sin(elapsed) / 3;
                 }
 
                 renderer.render(scene, camera);

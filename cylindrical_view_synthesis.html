@@ -142,15 +142,13 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
             }
             
-            var time = clock.getElapsedTime();
+            const time0 = clock.getElapsedTime();
             
             function render() {
                 // If we are not presenting move the camera a little so the effect is visible
 
                 if (renderer.xr.isPresenting === false) {
-                    const new_time = clock.getElapsedTime();
-                    var elapsed = new_time - time;
-                    time = new_time;
+                    const elapsed = clock.getElapsedTime() - time0;
 
                     /*camera.rotation.y += 0.001;
                     camera.position.x = Math.sin(time) * 0.05;

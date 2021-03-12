@@ -32,10 +32,10 @@
                 scene.add(light);
 
                 camera = new THREE.PerspectiveCamera(
-                    70,
+                    90,
                     window.innerWidth / window.innerHeight,
-                    1,
-                    2000
+                    .1,
+                    1000
                 );
                 scene.add(camera);
 
@@ -100,9 +100,9 @@
                     });
 
                     const panoSphereGeo = new THREE.CylinderGeometry(
-                        6 * some_depths[depths],
-                        6 * some_depths[depths],
-                        6 * some_depths[depths],
+                        some_depths[depths],
+                        some_depths[depths],
+                        some_depths[depths],
                         360,
                         1,
                         true

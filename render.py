@@ -24,7 +24,7 @@ if __name__ == '__main__':
     fovy = 90
 
     glutInit()
-    glutInitDisplayMode(GLUT_RGBA|GLUT_3_2_CORE_PROFILE)
+    glutInitDisplayMode(GLUT_RGBA|GLUT_3_2_CORE_PROFILE|GLUT_DOUBLE)
     glutInitWindowSize(width,height)
     glutInitWindowPosition(0,0)
     window = glutCreateWindow('window')
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     depths = 1./np.linspace(1./max_depth,1./min_depth,32,endpoint=True)
      
     if args.mode == 'cylindrical':
-        meshes = [Cylinder(bottom=-1*depth,top=1*depth,radius=depth,texturepath=os.path.join(args.path,'courtyard_%d.png'%i)) for i,depth in enumerate(depths)]
+        meshes = [Cylinder(bottom=-1*depth,top=1*depth,radius=depth,texturepath=os.path.join(args.path,'layer_%d.png'%i)) for i,depth in enumerate(depths)]
     else:
         meshes = [Plane(depth=depth,texturepath=os.path.join(args.path,'image1_%d.png'%i)) for i,depth in enumerate(depths)]
     
@@ -58,6 +58,7 @@ if __name__ == '__main__':
     time0 = time.time()
     def do_render():
         t = (time.time() - time0)/10
+        #eye = np.array([np.sin(t*10)/3,0,0])*.4
         eye = np.array([np.sin(t*10)/3,0,0])
         up = np.array([0,1,0])
         target = eye+np.array([np.sin(t),0,-np.cos(t)])

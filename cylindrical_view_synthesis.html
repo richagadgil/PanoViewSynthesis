@@ -73,11 +73,11 @@
             let camera, scene, renderer, sphere, clock;
         
             const params = parseQueryString();
-            var scale = 1.0;
+            var scale = 2.0;
             if ( params['scale'] )
             {
                 scale = parseFloat(params['scale']);
-                if ( isNaN(scale) ) scale = 1.0;
+                if ( isNaN(scale) ) scale = 2.0;
             }
 
             init();

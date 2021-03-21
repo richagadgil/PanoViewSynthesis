@@ -13,6 +13,7 @@
         <div id="container"></div>
 
         <script src="js/three.js"></script>
+
         <script id="mpiVertexShader" type="x-shader/x-vertex">
             varying highp vec2 vUv;
             void main() {
@@ -69,8 +70,9 @@
             };
 
             import { VRButton } from './js/VRButton.js';
+            import { StereoEffect } from 'https://threejs.org/examples/jsm/effects/StereoEffect.js';
 
-            let camera, scene, renderer, sphere, clock;
+            let camera, effect, scene, renderer, sphere, clock;
         
             const params = parseQueryString();
             var scale = 3.0;
@@ -99,7 +101,6 @@
                     .1,
                     1000
                 );
-                scene.add(camera);
 
                 var boxWidth = 1;
                 var boxHeight = 1;
@@ -236,6 +237,9 @@
                 renderer.xr.setReferenceSpaceType('local');
                 renderer.setAnimationLoop(render);
 
+                effect = new StereoEffect( renderer );
+                effect.setSize( window.innerWidth, window.innerHeight );
+
                 container.appendChild(renderer.domElement);
                 document.body.appendChild(VRButton.createButton(renderer));
 
@@ -246,7 +250,8 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
 
-                renderer.setSize(window.innerWidth, window.innerHeight);
+                //renderer.setSize(window.innerWidth, window.innerHeight);
+                effect.setSize( window.innerWidth, window.innerHeight );
             }
             
             const time0 = clock.getElapsedTime();
@@ -265,7 +270,9 @@
                     camera.position.x = Math.sin(elapsed) / 3;
                 }
 
-                renderer.render(scene, camera);
+                //renderer.render(scene, camera);
+                effect.render(scene, camera);
+
             }
         </script>
     </body>

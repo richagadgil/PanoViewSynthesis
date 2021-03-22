@@ -16,8 +16,10 @@
 
         <script id="mpiVertexShader" type="x-shader/x-vertex">
             varying highp vec2 vUv;
+            uniform mat3 vUvTransform;
             void main() {
-                vUv = vec2(1.-uv.x,uv.y);
+                vec3 my_uv = vUvTransform * vec3(uv.xy,1.);
+                vUv = vec2(1.-(my_uv.x),(my_uv.y));
                 vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
                 gl_Position = projectionMatrix * modelViewPosition; 
             }
@@ -151,9 +153,16 @@
 
 
                     for (depths = 0; depths < 32; depths++) {
+                        var r = Math.floor(depths/8);
+                        var c = depths%8;
+                        var uv_transform = new THREE.Matrix3();
+                        uv_transform.set(
+                            1./8., 0., c/8.,
+                            0., 1./4., r/4.,
+                            0., 0., 1.);
                         var cylinderMat = new THREE.ShaderMaterial({
                             side: THREE.BackSide,
-                            uniforms: { tColor: { value: null } },
+                            uniforms: { tColor: { value: null }, vUvTransform: { value: uv_transform } },
                             vertexShader: document.getElementById('mpiVertexShader').text,
                             fragmentShader: document.getElementById('mpiFragmentShader').text,
                             transparent: true
@@ -173,15 +182,20 @@
                             cylinderMat
                         );
 
-                        loader.load(
-                            './cylindrical_test/frame_test' + params['scene'] + '/layers/layer_' + depths.toString() + '.png',
-                            function(texture) {
-                                cylinder.material.uniforms.tColor.value = texture;
-                            }
-                        );
-
                         cylinders.push(cylinder);
                     }
+
+                    loader.load(
+                        './cylindrical_test/frame_test' + params['scene'] + '/atlas.png',
+                        function(texture) {
+                            texture.generateMipmaps = false;
+                            texture.minFilter = THREE.LinearFilter;
+                            for ( depths = 0; depths < 32; depths++ )
+                            {
+                                cylinders[depths].material.uniforms.tColor.value = texture;
+                            }
+                        }
+                    );
 
                     manager.onLoad = function() {
                     for (depths = 0; depths < 32; depths++) {
@@ -231,7 +245,7 @@
                 }
 
                 renderer = new THREE.WebGLRenderer();
-                alert('max texture size: ' + renderer.capabilities.maxTextureSize );
+                console.log('max texture size: ' + renderer.capabilities.maxTextureSize );
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;

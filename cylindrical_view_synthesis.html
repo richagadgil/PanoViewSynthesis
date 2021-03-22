@@ -231,6 +231,7 @@
                 }
 
                 renderer = new THREE.WebGLRenderer();
+                alert('max texture size: ' + renderer.capabilities.maxTextureSize );
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;

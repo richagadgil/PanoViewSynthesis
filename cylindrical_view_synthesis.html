@@ -18,8 +18,7 @@
             varying highp vec2 vUv;
             uniform mat3 vUvTransform;
             void main() {
-                vec3 my_uv = vUvTransform * vec3(uv.xy,1.);
-                vUv = vec2(1.-(my_uv.x),(my_uv.y));
+                vUv = (vUvTransform * vec3(uv.x,uv.y,1.)).xy;
                 vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
                 gl_Position = projectionMatrix * modelViewPosition; 
             }
@@ -29,7 +28,9 @@
             uniform sampler2D tColor;
             varying highp vec2 vUv;
             void main() {
-                gl_FragColor = texture2D(tColor,vUv);
+                vec4 rgba = texture2D(tColor,vUv);
+                gl_FragColor = rgba;
+                //gl_FragColor = vec4(rgba.a,0,0,1);
             }
         </script>
 
@@ -153,13 +154,16 @@
 
 
                     for (depths = 0; depths < 32; depths++) {
-                        var r = Math.floor(depths/8);
-                        var c = depths%8;
+                        var c = depths%4;
+                        var r = Math.floor(depths/4);
+                        console.log('c: ' + c)
+                        console.log('r: ' + r)
                         var uv_transform = new THREE.Matrix3();
                         uv_transform.set(
-                            1./8., 0., c/8.,
-                            0., 1./4., r/4.,
+                            1./4., 0., c/4.,
+                            0., 1./8., r/8.,
                             0., 0., 1.);
+                        console.log('transform for layer ' + depths + ': ' + uv_transform.toArray().toString());
                         var cylinderMat = new THREE.ShaderMaterial({
                             side: THREE.BackSide,
                             uniforms: { tColor: { value: null }, vUvTransform: { value: uv_transform } },
@@ -182,6 +186,17 @@
                             cylinderMat
                         );
 
+/*
+                        loader.load(
+                            './cylindrical_test/frame_test' + params['scene'] + '/layers/layer_' + depths.toString() + '.png',
+                            function(texture) {
+                                texture.generateMipmaps = false;
+                                texture.minFilter = THREE.LinearFilter;
+                                cylinder.material.uniforms.tColor.value = texture;
+                            }
+                        );
+*/
+
                         cylinders.push(cylinder);
                     }
 
@@ -190,7 +205,7 @@
                         function(texture) {
                             texture.generateMipmaps = false;
                             texture.minFilter = THREE.LinearFilter;
-                            for ( depths = 0; depths < 32; depths++ )
+                            for ( depths = 0; depths < cylinders.length; depths++ )
                             {
                                 cylinders[depths].material.uniforms.tColor.value = texture;
                             }
@@ -198,7 +213,7 @@
                     );
 
                     manager.onLoad = function() {
-                    for (depths = 0; depths < 32; depths++) {
+                    for (depths = 0; depths < cylinders.length; depths++) {
                             scene.add(cylinders[depths]);
                         }
                     };
@@ -244,7 +259,7 @@
                     };
                 }
 
-                renderer = new THREE.WebGLRenderer();
+                renderer = new THREE.WebGLRenderer( { alpha: true } );
                 console.log('max texture size: ' + renderer.capabilities.maxTextureSize );
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);

@@ -242,6 +242,8 @@
                     loader.load(
                         './cylindrical_test/frame_test' + params['scene'] + '/input.png',
                         function(texture) {
+                            texture.minFilter = THREE.LinearFilter;
+                            texture.generateMipmaps = false;
                             cylinder.material.uniforms.tColor.value = texture;
                         }
                     );
@@ -249,6 +251,8 @@
                     loader.load(
                         './cylindrical_test/frame_test' + params['scene'] + '/disparity_map.png',
                         function(texture) {
+                            texture.generateMipmaps = false;
+                            texture.minFilter = THREE.LinearFilter;
                             cylinder.material.uniforms.tDisparity.value = texture;
                         }
                     );

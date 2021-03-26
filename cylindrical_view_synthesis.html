@@ -132,6 +132,7 @@
                 var cylinders = [];
                 var depths;
                 var pics;
+                const height = 5;
 
                 if ( params['mode'] == 'plain' ) {
                     const size = 100;
@@ -139,7 +140,7 @@
                     const cylinderGeom = new THREE.CylinderGeometry(
                         size,
                         size,
-                        size*2,
+                        size*height,
                         360,
                         1,
                         true
@@ -157,7 +158,7 @@
                     var cylinder = new THREE.Mesh(cylinderGeom,cylinderMat);
 
                     loader.load(
-                        './cylindrical_test/frame_test' + params['scene'] + '/input.png',
+                        './cylindrical_test2.5/frame_test' + params['scene'] + '/input.png',
                         function(texture) {
                             //texture.minFilter = THREE.LinearFilter;
                             //texture.generateMipmaps = false;
@@ -228,7 +229,7 @@
                         const cylinderGeom = new THREE.CylinderGeometry(
                             scale*some_depths[depths],
                             scale*some_depths[depths],
-                            scale*2.*some_depths[depths],
+                            scale*height*some_depths[depths],
                             360,
                             1,
                             true
@@ -241,7 +242,7 @@
 
 /*
                         loader.load(
-                            './cylindrical_test/frame_test' + params['scene'] + '/layers/layer_' + depths.toString() + '.png',
+                            './cylindrical_test2.5/frame_test' + params['scene'] + '/layers/layer_' + depths.toString() + '.png',
                             function(texture) {
                                 texture.generateMipmaps = false;
                                 texture.minFilter = THREE.LinearFilter;
@@ -254,7 +255,7 @@
                     }
 
                     loader.load(
-                        './cylindrical_test/frame_test' + params['scene'] + '/atlas.png',
+                        './cylindrical_test2.5/frame_test' + params['scene'] + '/atlas.png',
                         function(texture) {
                             texture.generateMipmaps = false;
                             texture.minFilter = THREE.LinearFilter;
@@ -275,7 +276,7 @@
                     const cylinderGeom = new THREE.CylinderGeometry(
                         scale,
                         scale,
-                        scale*2,
+                        scale*height,
                         1024,
                         64,
                         true
@@ -293,7 +294,7 @@
                     var cylinder = new THREE.Mesh(cylinderGeom,cylinderMat);
 
                     loader.load(
-                        './cylindrical_test/frame_test' + params['scene'] + '/input.png',
+                        './cylindrical_test2.5/frame_test' + params['scene'] + '/input.png',
                         function(texture) {
                             texture.minFilter = THREE.LinearFilter;
                             texture.generateMipmaps = false;
@@ -302,7 +303,7 @@
                     );
 
                     loader.load(
-                        './cylindrical_test/frame_test' + params['scene'] + '/disparity_map.png',
+                        './cylindrical_test2.5/frame_test' + params['scene'] + '/disparity_map.png',
                         function(texture) {
                             texture.generateMipmaps = false;
                             texture.minFilter = THREE.LinearFilter;

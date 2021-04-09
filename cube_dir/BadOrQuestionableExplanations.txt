@@ -1,0 +1,18 @@
+All pictures taken at camera position 0,0,0. 
+
+This file explains why the pictures in a directory
+are bad or questionable.
+
+Bad pictures:
+apartment_2 (blurry, but potentially other rooms in it might be good)
+frl_apartment_0 (extremely clear, but gaping hole in ceiling)
+frl_apartment_2 (same as above)
+frl_apartment_3 (same as above)
+frl_apartment_4 (same as above)
+frl_apartment_5 (same as above)
+room_2 (I just need to retake this one at a different position)
+
+Questionable, but probably alright
+
+office_2 (lighting is a little bright, but not too glaring)
+room_0 (same as above)

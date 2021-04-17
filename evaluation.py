@@ -21,8 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('test_path')
     args = parser.parse_args()
 
-    width = 640
-    height = 480
+    width = 1280
+    height = 1280
     fovy = 90
 
     glutInit()
@@ -44,13 +44,13 @@ if __name__ == '__main__':
     with open(target_json_path) as f:
         target_json = json.load(f)
 
-    meshes = [Cylinder(bottom=-1*depth, top=1*depth, radius=depth,
-                       texturepath=args.cylinder_path) for i, depth in enumerate(depths)]
+    meshes = [MyCylinder(bottom=-1*depth, top=1*depth, radius=depth,
+                         texturepath=os.path.join(args.cylinder_path, 'layers/layer_%d.png' % i)) for i, depth in enumerate(depths)]
 
     renderer = Renderer(meshes, width=width, height=height,
                         offscreen=True)
 
-    eye = np.array(target_json["eye"])
+    eye = np.array([target_json["eye"]])
     target = np.array(target_json["target"])
     up = np.array(target_json["up"])
 
@@ -58,7 +58,15 @@ if __name__ == '__main__':
     proj_matrix = perspective(fovy, width/height, 0.1, 1000.0)
     mvp_matrix = proj_matrix@view_matrix
 
-    image = renderer.render(mvp_matrix)
-    imwrite('rendered_frame.png', image)
+    produced_image = renderer.render(mvp_matrix)
+    imwrite('produced_frame.png', produced_image)
 
+    target_image = imread(args.test_path)
+
+    # Calculate MSE HERE
+    mse = ((produced_image - target_image)**2).mean(axis=None)
+    print('MSE: ', mse)
     sys.exit(0)
+
+
+# python evaluation.py cube_dir/room_0/ cube_dir/room_0/00/cube_images/cube_00_01_frame.png

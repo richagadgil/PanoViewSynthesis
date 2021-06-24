@@ -32,9 +32,14 @@
         </script>
 
         <script id="mpiVertexShader" type="x-shader/x-vertex">
+            attribute vec2 texOffsets;
             varying highp vec2 vUv;
-            uniform mat3 vUvTransform;
             void main() {
+                mat3 vUvTransform = mat3(
+                    1./4., 0., 0.,
+                    0., 1./8., 0.,
+                    texOffsets.x,texOffsets.y, 1.
+                );
                 vUv = (vUvTransform * vec3(uv.x,uv.y,1.)).xy;
                 vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
                 gl_Position = projectionMatrix * modelViewPosition; 
@@ -207,69 +212,61 @@
                     ];
 
 
-                    for (depths = 0; depths < 32; depths++) {
-                        var c = depths%4;
-                        var r = Math.floor(depths/4);
-                        console.log('c: ' + c)
-                        console.log('r: ' + r)
-                        var uv_transform = new THREE.Matrix3();
-                        uv_transform.set(
-                            1./4., 0., c/4.,
-                            0., 1./8., r/8.,
-                            0., 0., 1.);
-                        console.log('transform for layer ' + depths + ': ' + uv_transform.toArray().toString());
-                        var cylinderMat = new THREE.ShaderMaterial({
+
+                    const vUvTransforms = []
+                    const scaleMats = []
+                    const numCylinders = 32
+                    for (depths = 0; depths < numCylinders; depths++) {
+                        const c = depths%4;
+                        const r = Math.floor(depths/4);
+                        vUvTransforms.push(c/4., r/8)
+
+                        const scaleMat = new THREE.Matrix4().makeScale(some_depths[depths], some_depths[depths], some_depths[depths]);
+                        scaleMats.push(scaleMat)
+
+                    }
+
+                    const cylinderMat = new THREE.ShaderMaterial({
                             side: THREE.BackSide,
-                            uniforms: { tColor: { value: null }, vUvTransform: { value: uv_transform } },
+                            uniforms: { tColor: { value: null }},
                             vertexShader: document.getElementById('mpiVertexShader').text,
                             fragmentShader: document.getElementById('mpiFragmentShader').text,
                             transparent: true
                         });
 
-                        const cylinderGeom = new THREE.CylinderGeometry(
-                            scale*some_depths[depths],
-                            scale*some_depths[depths],
-                            scale*height*some_depths[depths],
+
+                    const cylinderGeom = new THREE.CylinderBufferGeometry(
+                            scale,
+                            scale,
+                            height*scale,
                             360,
                             1,
                             true
                         );
+                    cylinderGeom.setAttribute( 'texOffsets', new THREE.InstancedBufferAttribute( new Float32Array( vUvTransforms ), 2 ) );
 
-                        const cylinder = new THREE.Mesh(
+                    const cylinder = new THREE.InstancedMesh(
                             cylinderGeom,
-                            cylinderMat
+                            cylinderMat,
+                            numCylinders
                         );
 
-/*
-                        loader.load(
-                            './cylindrical_test2.5/frame_test' + params['scene'] + '/layers/layer_' + depths.toString() + '.png',
-                            function(texture) {
-                                texture.generateMipmaps = false;
-                                texture.minFilter = THREE.LinearFilter;
-                                cylinder.material.uniforms.tColor.value = texture;
-                            }
-                        );
-*/
+                    for(let i = 0; i < numCylinders; i++)
+                        cylinder.setMatrixAt(i ,scaleMats[i])
 
-                        cylinders.push(cylinder);
-                    }
+
 
                     loader.load(
                         './cylindrical_test2.5/frame_test' + params['scene'] + '/atlas.png',
                         function(texture) {
                             texture.generateMipmaps = false;
                             texture.minFilter = THREE.LinearFilter;
-                            for ( depths = 0; depths < cylinders.length; depths++ )
-                            {
-                                cylinders[depths].material.uniforms.tColor.value = texture;
-                            }
+                            cylinder.material.uniforms.tColor.value = texture;
                         }
                     );
 
                     manager.onLoad = function() {
-                    for (depths = 0; depths < cylinders.length; depths++) {
-                            scene.add(cylinders[depths]);
-                        }
+                        scene.add(cylinder);
                     };
                 } else if ( params['mode'] == 'depth' ) {
                     // Create the panoramic sphere geometery

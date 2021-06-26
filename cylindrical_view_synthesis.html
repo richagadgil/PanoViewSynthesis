@@ -33,6 +33,7 @@
 
         <script id="mpiVertexShader" type="x-shader/x-vertex">
             attribute vec2 texOffsets;
+            attribute float scale;
             varying highp vec2 vUv;
             void main() {
                 mat3 vUvTransform = mat3(
@@ -40,8 +41,15 @@
                     0., 1./8., 0.,
                     texOffsets.x,texOffsets.y, 1.
                 );
+                mat4 scaleMat = mat4(
+                    scale, 0., 0.,0.,
+                    0., scale, 0.,0.,
+                    0., 0., scale,0.,
+                    0., 0., 0.,1.0);
+
+
                 vUv = (vUvTransform * vec3(uv.x,uv.y,1.)).xy;
-                vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+                vec4 modelViewPosition = (modelViewMatrix * scaleMat) * vec4(position, 1.0);
                 gl_Position = projectionMatrix * modelViewPosition; 
             }
         </script>
@@ -49,6 +57,7 @@
         <script id="mpiFragmentShader" type="x-shader/x-fragment">
             uniform sampler2D tColor;
             varying highp vec2 vUv;
+
             void main() {
                 vec4 rgba = texture2D(tColor,vUv);
                 gl_FragColor = rgba;
@@ -244,6 +253,7 @@
                             true
                         );
                     cylinderGeom.setAttribute( 'texOffsets', new THREE.InstancedBufferAttribute( new Float32Array( vUvTransforms ), 2 ) );
+                    cylinderGeom.setAttribute( 'scale', new THREE.InstancedBufferAttribute( new Float32Array( some_depths ), 1 ) );
 
                     const cylinder = new THREE.InstancedMesh(
                             cylinderGeom,
@@ -251,8 +261,10 @@
                             numCylinders
                         );
 
-                    for(let i = 0; i < numCylinders; i++)
-                        cylinder.setMatrixAt(i ,scaleMats[i])
+                    // for(let i = 0; i < numCylinders; i++)
+                    //     cylinder.setMatrixAt(i ,scaleMats[i])
+
+                    // cylinder.instanceMesh.needsUpdate = true
 
 
 

@@ -148,6 +148,47 @@ class MyCylinder(Mesh):
 
         #self.texture = np.rot90(self.texture, axes=(-2, -1))
 
+class Sphere(Mesh):
+    def __init__(self, radius: float, width_segments: int, height_segments: int):
+        # points = (height segments, width segments)
+        height_range = np.linspace(-np.pi, np.pi, height_segments + 1)
+        width_range = np.linspace(0, 2*np.pi, width_segments + 1)
+        self.vertices = []
+        self.normals = []
+        self.texCoords = []
+        self.indices = []
+        for phi in height_range:
+            u_offset = 0.5 / width_segments if phi == -np.pi else -0.5 / width_segments if phi == np.pi else 0
+            norm_h = (phi + np.pi)/2*np.pi
+            for theta in width_range:
+                norm_w = theta/2*np.pi
+                x = - radius * np.cos(theta) * np.sin(phi)
+                y = radius * np.cos(phi)
+                z = radius * np.sin(theta) * np.sin(phi)
+                v = np.array([x, y, z])
+                self.vertices.append(v)
+                # Normals point inward
+                self.normals.append(-v / np.linalg.norm(v))
+                self.texCoords.append(np.array([norm_w + u_offset, 1 - norm_h]))
+        combinations = len(height_range) * len(width_range)
+        idx_grid = np.linspace(0, combinations, combinations + 1).reshape(len(height_range), len(width_range))
+
+        for y in range(0, height_segments):
+            for x in range(0, width_segments):
+                a = idx_grid[y][x + 1]
+                b = idx_grid[y][x]
+                c = idx_grid[y + 1][x]
+                d = idx_grid[y + 1][x + 1]
+                if y > 0: self.indices.append(np.array([a,b,d]))
+                if y != height_segments - 1: self.indices.append(np.array([b,c,d]))
+
+        
+
+        
+                
+
+
+                
 
 class Plane(Mesh):
     def __init__(self, depth, texturepath):

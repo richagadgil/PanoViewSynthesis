@@ -149,7 +149,7 @@ class MyCylinder(Mesh):
         #self.texture = np.rot90(self.texture, axes=(-2, -1))
 
 class Sphere(Mesh):
-    def __init__(self, radius: float, width_segments: int, height_segments: int):
+    def __init__(self, radius: float, width_segments: int, height_segments: int, texturepath:str):
         # points = (height segments, width segments)
         height_range = np.linspace(-np.pi, np.pi, height_segments + 1)
         width_range = np.linspace(0, 2*np.pi, width_segments + 1)
@@ -157,6 +157,8 @@ class Sphere(Mesh):
         self.normals = []
         self.texCoords = []
         self.indices = []
+
+        #Build Vertices
         for phi in height_range:
             u_offset = 0.5 / width_segments if phi == -np.pi else -0.5 / width_segments if phi == np.pi else 0
             norm_h = (phi + np.pi)/2*np.pi
@@ -167,12 +169,14 @@ class Sphere(Mesh):
                 z = radius * np.sin(theta) * np.sin(phi)
                 v = np.array([x, y, z])
                 self.vertices.append(v)
-                # Normals point inward
+                # Create normals and UVs
                 self.normals.append(-v / np.linalg.norm(v))
                 self.texCoords.append(np.array([norm_w + u_offset, 1 - norm_h]))
         combinations = len(height_range) * len(width_range)
-        idx_grid = np.linspace(0, combinations, combinations + 1).reshape(len(height_range), len(width_range))
+        idx_grid = np.linspace(0, combinations - 1, combinations).astype(int).reshape(len(height_range), len(width_range))
 
+
+        #Build indices
         for y in range(0, height_segments):
             for x in range(0, width_segments):
                 a = idx_grid[y][x + 1]
@@ -181,6 +185,11 @@ class Sphere(Mesh):
                 d = idx_grid[y + 1][x + 1]
                 if y > 0: self.indices.append(np.array([a,b,d]))
                 if y != height_segments - 1: self.indices.append(np.array([b,c,d]))
+        self.vertices = np.array(self.vertices).astype(np.float32)
+        self.normals = np.array(self.normals).astype(np.float32)
+        self.texCoords = np.array(self.texCoords).astype(np.float32)
+        self.indices = np.array(self.indices).astype(np.uint16)
+        self.texture = imread(texturepath)
 
         
 

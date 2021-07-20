@@ -35,11 +35,12 @@ if __name__ == '__main__':
     max_depth = 100.
     depths = 1./np.linspace(1./max_depth,1./min_depth,32,endpoint=True)
      
-    if args.mode == 'cylindrical':
-        meshes = [Cylinder(bottom=-1*depth,top=1*depth,radius=depth,texturepath=os.path.join(args.path,'layer_%d.png'%i)) for i,depth in enumerate(depths)]
-    else:
-        meshes = [Plane(depth=depth,texturepath=os.path.join(args.path,'image1_%d.png'%i)) for i,depth in enumerate(depths)]
-    
+    #if args.mode == 'cylindrical':
+    #    meshes = [Cylinder(bottom=-1*depth,top=1*depth,radius=depth,texturepath=os.path.join(args.path,'layer_%d.png'%i)) for i,depth in enumerate(depths)]
+    #else:
+    #    meshes = [Plane(depth=depth,texturepath=os.path.join(args.path,'image1_%d.png'%i)) for i,depth in enumerate(depths)]
+    meshes = [Sphere(radius=depth, width_segments=1, height_segments=1, texturepath=os.path.join(args.path,'layer_%d.png'%i)) for i,depth in enumerate(depths)]
+   
     renderer = Renderer(meshes,width=width,height=height,offscreen=args.offscreen)
     
     if args.offscreen:

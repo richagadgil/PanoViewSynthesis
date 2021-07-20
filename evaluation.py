@@ -80,7 +80,7 @@ if __name__ == '__main__':
     #print(sigma.numpy())
     #depths = [i*sigma.numpy() for i in depths]
     print(depths)
-    meshes = [MyCylinder(bottom=-1*depth, top=1*depth, radius=depth,
+    meshes = [Sphere(radius=depth, width_segments=200, height_segments=200,
                          texturepath=os.path.join(args.cylinder_path, 'layers/layer_%d.png' % i)) for i, depth in enumerate(depths)]
 
     renderer = Renderer(meshes, width=width, height=height,

@@ -32,12 +32,12 @@ sigmas.append(s)
 
 """
 
-def compute_sigma(pred_disp,points):
-    points = tf.math.log(points)
-    pred_disp = tf.math.log(pred_disp)
-    points_depths = tf.where(~tf.math.is_finite(points), tf.zeros_like(points), points)
-    actual_depths = tf.where(~tf.math.is_finite(pred_disp), tf.zeros_like(pred_disp), pred_disp)
-    sigma = tf.math.exp(tf.reduce_mean(points_depths+actual_depths))
+def compute_sigma(pred_disp,actual_disp):
+    print(actual_disp.shape, pred_disp.shape)
+    zero_mask = (actual_disp != 0) & (pred_disp != 0)
+    actual_disp = np.log(actual_disp[zero_mask]) 
+    pred_disp = np.log(pred_disp[zero_mask])
+    sigma = np.exp(np.mean(pred_disp-actual_disp))
     return sigma
 
 
@@ -72,16 +72,17 @@ if __name__ == '__main__':
     locations = [os.path.join("cube_dir", folder) for folder in os.listdir("cube_dir") if len(folder.split(".")) < 2 ]
     for location in locations[0:1]:
         print(f"Working on location {location}...")
-        predicted_depth = imread(os.path.join(location, 'predicted_depth.png')).astype('float32')[:,:,0]
-        actual_depth = imread(os.path.join(location, 'actual_depth.png')).astype('float32')
-        sigma = compute_sigma(predicted_depth, actual_depth) 
-        sigma_depths = [i*sigma.numpy() for i in depths]
+        predicted_disparity = imread(os.path.join(location, 'predicted_depth.png')).astype('float32')[:,:,0]
+        actual_disparity = imread(os.path.join(location, 'actual_depth.png')).astype('float32')
+
+        sigma = compute_sigma(predicted_disparity, actual_disparity) 
+        sigma_depths = [i*sigma for i in depths]
 
         test = {"sigma_depths": sigma_depths, "depths": depths}
 
         # load json
-        json_folder_path = os.path.join(location, "00", "cube_images_json")
-        img_dir_path = os.path.join(location, "00", "cube_images")
+        json_folder_path = os.path.join(location, "00", "test_json")
+        img_dir_path = os.path.join(location, "00", "test")
 
         view_filenames = [file.split(".")[0] for file in os.listdir(json_folder_path)]
         #print(view_filenames)
@@ -102,7 +103,7 @@ if __name__ == '__main__':
                 renderer = Renderer(meshes, width=width, height=height,
                                     offscreen=True)
 
-                eye = np.array([target_json["eye"]]) * 0.5
+                eye = np.array([target_json["eye"]])
                 target = np.array(target_json["target"])
                 up = np.array(target_json["up"])
 
@@ -115,7 +116,7 @@ if __name__ == '__main__':
                 imwrite(os.path.join(img_dir_path, f"{name}_{filename}_produced.png"), produced_image)
                 # Calculate MSE HERE
                 mse = ((produced_image - target_image)**2).mean(axis=None)
-
+                print(name, mse)
                 MSE[filename][name] = str(mse)
 
         with open(os.path.join(location,'mse.json'), 'w') as json_file:

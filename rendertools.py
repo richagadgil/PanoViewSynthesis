@@ -150,7 +150,8 @@ class MyCylinder(Mesh):
 
 class Sphere(Mesh):
     def __init__(self, radius: float, width_segments: int, height_segments: int, texturepath:str):
-        # points = (height segments, width segments)
+        width_segments = np.max([width_segments, 3])
+        height_segments = np.max([height_segments, 3])
         height_range = np.linspace(-np.pi, np.pi, height_segments + 1)
         width_range = np.linspace(0, 2*np.pi, width_segments + 1)
         self.vertices = []
@@ -159,19 +160,17 @@ class Sphere(Mesh):
         self.indices = []
 
         #Build Vertices
-        for phi in height_range:
-            u_offset = 0.5 / width_segments if phi == -np.pi else -0.5 / width_segments if phi == np.pi else 0
-            norm_h = (phi + np.pi)/2*np.pi
-            for theta in width_range:
-                norm_w = theta/2*np.pi
-                x = - radius * np.cos(theta) * np.sin(phi)
-                y = radius * np.cos(phi)
-                z = radius * np.sin(theta) * np.sin(phi)
-                v = np.array([x, y, z])
-                self.vertices.append(v)
+        for v in np.linspace(0,1,height_segments + 1):
+            u_offset = 0.5 / width_segments if v == 0 else -0.5 / width_segments if v == 1 else 0
+            for u in np.linspace(0,1,width_segments + 1):
+                x = - radius * np.cos(u * 2 * np.pi) * np.sin(v * np.pi)
+                y = radius * np.cos(v * np.pi)
+                z = radius * np.sin(u * 2 * np.pi) * np.sin(v * np.pi)
+                vertex = np.array([x, y, z])
+                self.vertices.append(vertex)
                 # Create normals and UVs
-                self.normals.append(-v / np.linalg.norm(v))
-                self.texCoords.append(np.array([norm_w + u_offset, 1 - norm_h]))
+                self.normals.append(-vertex / np.linalg.norm(vertex))
+                self.texCoords.append(np.array([u + u_offset, v]))
         combinations = len(height_range) * len(width_range)
         idx_grid = np.linspace(0, combinations - 1, combinations).astype(int).reshape(len(height_range), len(width_range))
 

@@ -39,7 +39,7 @@ if __name__ == '__main__':
     #    meshes = [Cylinder(bottom=-1*depth,top=1*depth,radius=depth,texturepath=os.path.join(args.path,'layer_%d.png'%i)) for i,depth in enumerate(depths)]
     #else:
     #    meshes = [Plane(depth=depth,texturepath=os.path.join(args.path,'image1_%d.png'%i)) for i,depth in enumerate(depths)]
-    meshes = [Sphere(radius=depth, width_segments=1, height_segments=1, texturepath=os.path.join(args.path,'layer_%d.png'%i)) for i,depth in enumerate(depths)]
+    meshes = [Sphere(radius=depth * 2, width_segments=60, height_segments=60, texturepath=os.path.join(args.path,'layer_%d.png'%i)) for i,depth in enumerate(depths)]
    
     renderer = Renderer(meshes,width=width,height=height,offscreen=args.offscreen)
     

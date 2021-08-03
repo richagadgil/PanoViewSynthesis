@@ -35,16 +35,16 @@ class ClosestPointExtractor3d(PoseExtractor):
 
         # Exclude camera positions at invalid positions
         gridpoints = []
-        thresh = 0.5
-        zeros_mask = (view == 0)
-        ones_mask = (view == 1)
-        inverted_view = np.copy(view)
-        inverted_view[zeros_mask] = 1
-        inverted_view[ones_mask] = 0
-        reduced_view = gaussian_filter(inverted_view.astype(float32), sigma=0.3)
-        reduced_view[reduced_view <= thresh] = 1
-        reduced_view[reduced_view > thresh] = 0
+        
+        thresh = 0.8
+        reduced_view = gaussian_filter(view.astype(float32), sigma=2)
+        
+        reduced_view[reduced_view >= thresh] = 1
+        reduced_view[reduced_view < thresh] = 0
         reduced_view = reduced_view.astype(int)
+        # Use these to compare difference
+        # plt.imsave("./view.png", view)
+        # plt.imsave("./reduced.png", reduced_view)
         for h in range(n_gridpoints_height):
             for w in range(n_gridpoints_width):
                 point = (dist + h * dist, 0, dist + w * dist)

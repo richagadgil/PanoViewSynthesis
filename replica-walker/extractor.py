@@ -10,7 +10,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 from habitat_sim.utils.data import ImageExtractor, PoseExtractor
 # import math
-# import pdb
+import pdb
 
 @registry.register_pose_extractor(name="closest_point_extractor_3d")
 class ClosestPointExtractor3d(PoseExtractor):
@@ -26,7 +26,8 @@ class ClosestPointExtractor3d(PoseExtractor):
         # Determine the physical spacing between each camera position
         height, width = view.shape
         dist = min(height, width) // 10  # We can modify this to be user-defined later
-
+        cam_height = 3
+        # TODO: Sci py rotation mat -> quat
         # Create a grid of camera positions
         n_gridpoints_width, n_gridpoints_height = (
             width // dist - 1,
@@ -38,16 +39,16 @@ class ClosestPointExtractor3d(PoseExtractor):
         
         thresh = 0.8
         reduced_view = gaussian_filter(view.astype(float32), sigma=2)
-        
+        # try erode
         reduced_view[reduced_view >= thresh] = 1
         reduced_view[reduced_view < thresh] = 0
         reduced_view = reduced_view.astype(int)
         # Use these to compare difference
-        # plt.imsave("./view.png", view)
-        # plt.imsave("./reduced.png", reduced_view)
+        plt.imsave("./view.png", view)
+        plt.imsave("./reduced.png", reduced_view)
         for h in range(n_gridpoints_height):
             for w in range(n_gridpoints_width):
-                point = (dist + h * dist, 0, dist + w * dist)
+                point = (dist + h * dist, dist + w * dist)
                 if self._valid_point(*point, reduced_view):
                     gridpoints.append(point)
 
@@ -56,10 +57,10 @@ class ClosestPointExtractor3d(PoseExtractor):
         # lap = eye + np.array([0,10,0]).astype(int)
         poses = []
         # [(tuple(eye), tuple(lap), fp), (eye, lap, fp)]
-        # TODO: Vary the y position by some value
         for point in gridpoints:
-            points_of_interest = self._panorama_extraction(point, view, dist)
-            poses.extend([(point, poi, fp) for poi in points_of_interest])
+            position = (point[0], cam_height, point[1])
+            points_of_interest = self._panorama_extraction(position, view, dist)
+            poses.extend([(position, poi, fp) for poi in points_of_interest])
         # Returns poses in 3D cartesian coordinate system
         return poses
 
@@ -92,12 +93,12 @@ class ClosestPointExtractor3d(PoseExtractor):
         neighbor_dist = dist // 2
         # TODO: reorganize these points to just take cube faces
         neighbors = [
-            (point[0] - neighbor_dist, point[1], point[2]),
-            (point[0] + neighbor_dist, point[1], point[2]),
-            (point[0], point[1] - neighbor_dist, point[2]),
-            (point[0], point[1] + neighbor_dist, point[2]),
-            (point[0], point[1], point[2] - neighbor_dist ),
-            (point[0], point[1], point[2] + neighbor_dist)
+            (point[0] - neighbor_dist, point[1], point[2]), # left
+            (point[0] + neighbor_dist, point[1], point[2]), #right
+            (point[0], point[1] - neighbor_dist, point[2]), # down
+            (point[0], point[1] + neighbor_dist, point[2]), # up
+            (point[0], point[1], point[2] - neighbor_dist ), # backward
+            (point[0], point[1], point[2] + neighbor_dist) # forward
         ]
 
         return neighbors
@@ -153,19 +154,17 @@ extractor = ImageExtractor(
 extractor.set_mode('train')
 
 # Index in to the extractor like a normal python list
-sample = extractor[0]
-plt.imsave(f"./reference/face.png", sample["rgba"])
+# sample = extractor[0]
+# plt.imsave(f"./reference/face.png", sample["rgba"])
 
 # Or use slicing
 # samples = extractor[1:4]
 # for sample in samples:
 #     display_sample(sample)
-# cubemap_i = 0
-# cubemap_i = min(cubemap_i, len(extractor )//6)
-# start_i =cubemap_i * 6
-# for i ,sample in enumerate(extractor[start_i:start_i + 6]):
-#     plt.imsave(f"./reference/face_{i}.png", sample["rgba"])
+cubemap_i = 5
+cubemap_i = min(cubemap_i, len(extractor )//6)
+start_i =cubemap_i * 6
+for i ,sample in enumerate(extractor[start_i:start_i + 6]):
+    plt.imsave(f"./tmp/face_{i}.png", sample["rgba"])
 
-# Close the extractor so we can instantiate another one later
-# (see close method for detailed explanation)
 extractor.close()

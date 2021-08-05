@@ -6,7 +6,7 @@ from quaternion import quaternion
 
 from habitat_sim import registry as registry
 import matplotlib.pyplot as plt
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import binary_erosion
 
 from habitat_sim.utils.data import ImageExtractor, PoseExtractor
 # import math
@@ -37,15 +37,10 @@ class ClosestPointExtractor3d(PoseExtractor):
         # Exclude camera positions at invalid positions
         gridpoints = []
         
-        thresh = 0.8
-        reduced_view = gaussian_filter(view.astype(float32), sigma=2)
-        # try erode
-        reduced_view[reduced_view >= thresh] = 1
-        reduced_view[reduced_view < thresh] = 0
-        reduced_view = reduced_view.astype(int)
-        # Use these to compare difference
-        plt.imsave("./view.png", view)
-        plt.imsave("./reduced.png", reduced_view)
+        reduced_view = binary_erosion(view, iterations=3)
+        # Use these to compare difference between original and eroded maps
+        # plt.imsave("./view.png", view)
+        # plt.imsave("./reduced.png", reduced_view)
         for h in range(n_gridpoints_height):
             for w in range(n_gridpoints_width):
                 point = (dist + h * dist, dist + w * dist)

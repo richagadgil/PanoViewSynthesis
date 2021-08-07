@@ -4,8 +4,10 @@ import numpy as np
 from numpy import float32, ndarray
 from quaternion import quaternion
 import quaternion as qt
+import py360convert
 
 from habitat_sim import registry as registry
+from habitat_sim import simulator
 import matplotlib.pyplot as plt
 from scipy.ndimage import binary_erosion
 from scipy.spatial.transform import Rotation
@@ -36,23 +38,17 @@ class CubeMapExtractor(PoseExtractor):
             width // dist - 1,
             height // dist - 1,
         )
-
+        # groups of xz points sampled from accessible areas in the scene
         gridpoints = []
-
+        # Scene reachability mask with bounds away from walls.
         reduced_view = binary_erosion(view, iterations=3)
-        # Use these to compare difference between original and eroded maps
-        # plt.imsave("./view.png", view)
-        # plt.imsave("./reduced.png", reduced_view)
         for h in range(n_gridpoints_height):
             for w in range(n_gridpoints_width):
                 point = (dist + h * dist, dist + w * dist)
                 if self._valid_point(*point, reduced_view):
                     gridpoints.append(point)
         # Generate a pose for each side of the cubemap
-        # eye = np.array([15,10,0]).astype(int)
-        # lap = eye + np.array([0,10,0]).astype(int)
         poses = []
-        # [(tuple(eye), tuple(lap), fp), (eye, lap, fp)]
         for row, col in gridpoints:
             position = (col, cam_height, row)
             points_of_interest = self._panorama_extraction(
@@ -69,13 +65,14 @@ class CubeMapExtractor(PoseExtractor):
         # Convert from topdown map coordinate system to that of the scene
         start_point = np.array(ref_point)
         converted_poses = []
+        # Hacky temporary solution, would be better to use look at points
         left = Rotation.from_euler("y", -89, degrees=True)
         right = Rotation.from_euler("y", 89, degrees=True)
         back = Rotation.from_euler("y", 179, degrees=True)
         up = Rotation.from_euler("x", 89, degrees=True)
         down = Rotation.from_euler("x", -89, degrees=True)
         front = Rotation.from_euler("x", 0, degrees=True)
-        rots = [left, right, up, down, back, front]
+        rots = [left, right, up, down, front, back]
         rots = [qt.from_rotation_matrix(
             rot.as_matrix()) for rot in rots]
         for i, pose in enumerate(poses):
@@ -86,12 +83,9 @@ class CubeMapExtractor(PoseExtractor):
                 np.array(look_at_point) * self.meters_per_pixel
             displacement = new_lap - new_pos
 
-            rot = lookAt(np.array([0, 0, 0]),
-                         displacement, np.array([0, 1, 0]))
-            print(Rotation.from_matrix(rot[:3, :3]).as_euler(
-                seq="xyz", degrees=True))
+            rot = qt.from_rotation_matrix(lookAt(np.array([0, 0, 0]),
+                                                 displacement, np.array([0, 1, 0])))
             rot = rots[i % len(rots)]
-            # print(new_pos)
             converted_poses.append(
                 (new_pos, rot, filepath))
 
@@ -101,14 +95,13 @@ class CubeMapExtractor(PoseExtractor):
         self, point: Tuple[int, int, int], view: ndarray, dist: int
     ) -> List[Tuple[int, int]]:
         neighbor_dist = 1
-        # TODO: reorganize these points to just take cube faces
         neighbors = [
             (point[0] - neighbor_dist, point[1], point[2]),  # left
             (point[0] + neighbor_dist, point[1], point[2]),  # right
-            (point[0], point[1] - neighbor_dist, point[2]),  # down
             (point[0], point[1] + neighbor_dist, point[2]),  # up
-            (point[0], point[1], point[2] - neighbor_dist),  # backward
-            (point[0], point[1], point[2] + neighbor_dist)  # forward
+            (point[0], point[1] - neighbor_dist, point[2]),  # down
+            (point[0], point[1], point[2] - neighbor_dist),  # forward
+            (point[0], point[1], point[2] + neighbor_dist),  # backward
         ]
 
         return neighbors
@@ -118,7 +111,7 @@ def lookAt(eye, center, up):
     F = center - eye
     f = normalize(F)
     if abs(f[1]) > 0.99:
-        f = up * np.sign(f[1])
+        f = normalize(up) * np.sign(f[1])
         u = np.array([0, 0, 1])
         s = np.cross(f, u)
     else:
@@ -138,22 +131,16 @@ def normalize(vec):
     return vec / np.linalg.norm(vec)
 
 
-# For viewing the extractor output
-def display_sample(sample):
-    img = sample["rgba"]
-    depth = sample["depth"]
-    semantic = sample["semantic"]
-
-    arr = [img, depth, semantic]
-    titles = ["rgba", "depth", "semantic"]
-    plt.figure(figsize=(12, 8))
-    for i, data in enumerate(arr):
-        ax = plt.subplot(1, 3, i + 1)
-        ax.axis("off")
-        ax.set_title(titles[i])
-        plt.imshow(data)
-
-    plt.show()
+def create_cubemap(left, right, up, down, front, back):
+    size = left.shape[0]
+    cubemap = np.full((size * 3, size * 4, 4), 255, dtype="uint8")
+    cubemap[size:2*size, 0:size] = left
+    cubemap[size:2*size, 2*size:3*size] = right
+    cubemap[0:size, size:2*size] = up
+    cubemap[2*size:3*size, size:2*size] = down
+    cubemap[size:2*size, size:2*size] = front
+    cubemap[size:2*size, 3*size:4*size] = back
+    return cubemap
 
 
 scene_filepath = "scenes/apartment_1.glb"
@@ -164,7 +151,6 @@ extractor = ImageExtractor(
     output=["rgba"],
     pose_extractor_name="cube_map_extractor",
     shuffle=False
-
 )
 
 # Use the list of train outputs instead of the default, which is the full list
@@ -179,10 +165,14 @@ extractor = ImageExtractor(
 # samples = extractor[1:4]
 # for sample in samples:
 #     display_sample(sample)
-cubemap_i = 0
+# cubemap_i = 0
 # cubemap_i = min(cubemap_i, len(extractor )//6)
-start_i = cubemap_i * 6
-for i, sample in enumerate(extractor[0:6]):
-    plt.imsave(f"./tmp/face_{i}.png", sample["rgba"])
+# start_i = cubemap_i * 6
+# for i, sample in enumerate(extractor[0:6]):
+#     plt.imsave(f"./tmp/face_{i}.png", sample["rgba"])
+
+cubemap = create_cubemap(*(image["rgba"] for image in extractor[6:12]))
+spherical = py360convert.c2e(cubemap, 512, 1024).astype("uint8")
+plt.imsave("./pano.png", spherical)
 
 extractor.close()

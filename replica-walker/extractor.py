@@ -11,6 +11,7 @@ from habitat_sim import simulator
 import matplotlib.pyplot as plt
 from scipy.ndimage import binary_erosion
 from scipy.spatial.transform import Rotation
+import _magnum as mn
 
 from habitat_sim.utils.data import ImageExtractor, PoseExtractor
 # import math
@@ -66,12 +67,12 @@ class CubeMapExtractor(PoseExtractor):
         start_point = np.array(ref_point)
         converted_poses = []
         # Hacky temporary solution, would be better to use look at points
-        left = Rotation.from_euler("y", -89, degrees=True)
-        right = Rotation.from_euler("y", 89, degrees=True)
-        back = Rotation.from_euler("y", 179, degrees=True)
-        up = Rotation.from_euler("x", 89, degrees=True)
-        down = Rotation.from_euler("x", -89, degrees=True)
-        front = Rotation.from_euler("x", 0, degrees=True)
+        left = Rotation.from_euler("y", 90, degrees=True)
+        right = Rotation.from_euler("y", -90, degrees=True)
+        back = Rotation.from_euler("y", 180, degrees=True)
+        up = Rotation.from_euler("x", 90, degrees=True)
+        down = Rotation.from_euler("x", -90, degrees=True)
+        front = Rotation.from_euler("y", 0, degrees=True)
         rots = [left, right, up, down, front, back]
         rots = [qt.from_rotation_matrix(
             rot.as_matrix()) for rot in rots]
@@ -79,12 +80,12 @@ class CubeMapExtractor(PoseExtractor):
             pos, look_at_point, filepath = pose
 
             new_pos = start_point + np.array(pos) * self.meters_per_pixel
-            new_lap = start_point + \
-                np.array(look_at_point) * self.meters_per_pixel
-            displacement = new_lap - new_pos
+            # new_lap = start_point + \
+            #     np.array(look_at_point) * self.meters_per_pixel
+            # displacement = new_lap - new_pos
 
-            rot = qt.from_rotation_matrix(lookAt(np.array([0, 0, 0]),
-                                                 displacement, np.array([0, 1, 0])))
+            # rot = qt.from_rotation_matrix(lookAt(np.array([0, 0, 0]),
+            #                                      displacement, np.array([0, 1, 0])))
             rot = rots[i % len(rots)]
             converted_poses.append(
                 (new_pos, rot, filepath))
@@ -143,7 +144,7 @@ def create_cubemap(left, right, up, down, front, back):
     return cubemap
 
 
-scene_filepath = "scenes/apartment_1.glb"
+scene_filepath = "scenes/skokloster-castle.glb"
 
 extractor = ImageExtractor(
     scene_filepath,
@@ -151,6 +152,7 @@ extractor = ImageExtractor(
     output=["rgba"],
     pose_extractor_name="cube_map_extractor",
     shuffle=False
+
 )
 
 # Use the list of train outputs instead of the default, which is the full list
@@ -165,13 +167,17 @@ extractor = ImageExtractor(
 # samples = extractor[1:4]
 # for sample in samples:
 #     display_sample(sample)
-# cubemap_i = 0
-# cubemap_i = min(cubemap_i, len(extractor )//6)
-# start_i = cubemap_i * 6
-# for i, sample in enumerate(extractor[0:6]):
-#     plt.imsave(f"./tmp/face_{i}.png", sample["rgba"])
+cubemap_i = 4
+cubemap_i = min(cubemap_i, len(extractor)//6)
+start_i = cubemap_i * 6
+for i, sample in enumerate(extractor[start_i:start_i + 6]):
+    plt.imsave(f"./tmp/face_{i}.png", sample["rgba"])
 
-cubemap = create_cubemap(*(image["rgba"] for image in extractor[6:12]))
+cubemap = create_cubemap(*(image["rgba"]
+                         for image in extractor[start_i:start_i + 6]))
+
+plt.imsave(f"./cubemap.png", cubemap)
+
 spherical = py360convert.c2e(cubemap, 512, 1024).astype("uint8")
 plt.imsave("./pano.png", spherical)
 

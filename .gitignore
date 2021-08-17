@@ -2,3 +2,4 @@
 env/*
 panosynthvr/*
 __pycache__/rendertools.cpython-37.pyc
+cube_dir/**/layers/*

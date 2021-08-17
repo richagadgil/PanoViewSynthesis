@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from habitat_sim.utils.data import ImageExtractor, PoseExtractor
 from scipy.spatial.transform import Rotation
 import quaternion as qt
+import json
+import py360convert
 
 
 class PanoExtractor(ImageExtractor):
@@ -92,9 +94,6 @@ class PanoExtractor(ImageExtractor):
 
         point = pos + np.random.uniform(-1, 1, 3)
         lap = point + np.random.uniform(-1, 1, 3)
-        while not pos_is_valid(point):
-            point = pos + np.random.uniform(-1, 1, 3)
-            lap = point + np.random.uniform(-1, 1, 3)
 
         new_state.position = point
 
@@ -104,7 +103,7 @@ class PanoExtractor(ImageExtractor):
         new_state.rotation = qt.from_rotation_matrix(mat[:3, :3])
         self.sim.agents[0].set_state(new_state)
         obs = self.sim.get_sensor_observations()
-        return (obs["color_snapshot"], {"eye": point, "center": lap, "up": up})
+        return (obs["color_snapshot"], {"eye": list(point - pos), "target": list(lap - pos), "up": up.tolist()})
 
 
 def lookAt(eye, center, up):
@@ -119,12 +118,12 @@ def lookAt(eye, center, up):
         s = np.cross(f, normalize(up))
         u = np.cross(normalize(s), f)
     M = np.eye(4)
-    M[0, 0:3] = s
-    M[1, 0:3] = u
-    M[2, 0:3] = -f
+    M[0:3, 0] = s
+    M[0:3, 1] = u
+    M[0:3, 2] = -f
 
     T = np.eye(4)
-    T[0:3, 3] = -eye
+    T[3, 0:3] = -eye
     return M@T
 
 
@@ -135,12 +134,19 @@ def normalize(vec):
 if __name__ == "__main__":
     scene_filepath = "scenes/skokloster-castle.glb"
     extractor = PanoExtractor(
-        scene_filepath,
+        ["scenes/skokloster-castle.glb", "scenes/apartment_1.glb"],
         img_size=(512, 1024),
         output=["rgba", "depth"],
         shuffle=False)
     snap = extractor.random_snapshot(0)
     for i, obs in enumerate(extractor[:6]):
         plt.imsave(f"./tmp/pano_{i}.png", obs["rgba"])
-        plt.imsave(f"./tmp/depth_{i}.png", obs["depth"])
+        plt.imsave(f"./tmp/depth_{i}.png", obs["depth"], cmap='Greys')
+
+    for i in range(6):
+        img, pose = extractor.random_snapshot(0)
+        plt.imsave(f"./snap/snapshot_{i}.png", img)
+        with open(f"./snap/pose_{i}.json", "w") as out:
+            json.dump(pose, out)
+
     extractor.close()

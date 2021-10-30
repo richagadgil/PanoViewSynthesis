@@ -3,36 +3,78 @@ from OpenGL.GLUT import *
 import numpy as np
 from imageio import imread, imwrite
 from scipy.special import cotdg
+import cv2
 
-vert = """
+mpi_vert = """
 #version 330
 
 layout(location = 0) in vec3 iPosition;
 layout(location = 1) in vec2 iTexCoord;
 
-out vec2 texCoord;
+out vec2 vTexCoord;
 
 uniform mat4 mvp;
 
 void main()
 {
     gl_Position = mvp * vec4(iPosition,1);
-    texCoord = iTexCoord;
+    vTexCoord = iTexCoord;
 }
 """
 
-frag = """
+mpi_frag = """
 #version 330
 
-uniform sampler2D sampler;
+uniform sampler2D tColor;
 
-in vec2 texCoord;
+in vec2 vTexCoord;
 
 out vec4 color;
 
 void main()
 {
-    color = texture(sampler,texCoord);
+    color = texture(tColor,vTexCoord);
+    //color = vec4(vTexCoord,0,1);
+}
+"""
+
+depth_vert = """
+#version 330
+
+layout(location = 0) in vec3 iPosition;
+layout(location = 1) in vec2 iTexCoord;
+
+out vec2 vTexCoord;
+out float vDisparity;
+
+uniform sampler2D tDisparity;
+uniform mat4 mvp;
+
+void main()
+{
+    float disparity = texture(tDisparity,iTexCoord).r;
+    gl_Position = mvp * vec4(iPosition/disparity,1);
+    vTexCoord = iTexCoord;
+    vDisparity = disparity;
+}
+"""
+
+depth_frag = """
+#version 330
+
+uniform sampler2D tColor;
+uniform sampler2D tDisparity;
+
+in vec2 vTexCoord;
+in float vDisparity;
+
+out vec3 color;
+
+void main()
+{
+    color = texture(tColor,vTexCoord).rgb;
+    //color = vec3(vTexCoord,0);
+    //color = texture(tDisparity,vTexCoord).rgb;
 }
 """
 
@@ -67,7 +109,21 @@ class Mesh:
         glBindTexture(GL_TEXTURE_2D, self.textureID)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self.texture.shape[1], self.texture.shape[0], 0, GL_RGBA, GL_UNSIGNED_BYTE, self.texture)
+        if self.texture.shape[2] == 4:
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self.texture.shape[1], self.texture.shape[0], 0, GL_RGBA, GL_UNSIGNED_BYTE, self.texture)
+        else:
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.texture.shape[1], self.texture.shape[0], 0, GL_RGB, GL_UNSIGNED_BYTE, self.texture)
+
+        self.disparityID = None
+        if self.disparity is not None:
+            self.disparityID = glGenTextures(1)
+            glActiveTexture(GL_TEXTURE1)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            glBindTexture(GL_TEXTURE_2D, self.disparityID)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, self.texture.shape[1], self.texture.shape[0], 0, GL_RED, GL_UNSIGNED_BYTE, self.disparity)
+            glActiveTexture(GL_TEXTURE0)
 
     def initializeVertexArray(self):
         """
@@ -91,30 +147,123 @@ class Mesh:
     def render(self):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureID)
+        if self.disparityID is not None:
+            glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_2D, self.disparityID)
         glBindVertexArray(self.vertexArrayObject)
-        glDrawElements(GL_TRIANGLES, self.indices.size, GL_UNSIGNED_SHORT, None)
+        glDrawElements(GL_TRIANGLES, self.indices.size, GL_UNSIGNED_INT, None)
 
 class Cylinder(Mesh):
-    def __init__(self,bottom,top,radius,texturepath,nsegments=1024):
-        thetarange = np.linspace(0,2*np.pi,nsegments)
+    def __init__(self,bottom,top,radius,texturepath,disparitypath=None,nsegments=360,nvertsegments=1):
+        urange = np.linspace(0,1,nsegments+1)
+        vrange = np.linspace(0,1,nvertsegments+1)
         self.vertices = []
         self.texCoords = []
-        for theta in thetarange:
-            x = radius*np.cos(theta)
-            z = radius*np.sin(theta)
-            self.vertices.append(np.array([x,bottom,z]))
-            self.vertices.append(np.array([x,top,z]))
-            self.texCoords.append(np.array([theta/(2*np.pi),0]))
-            self.texCoords.append(np.array([theta/(2*np.pi),1]))
         self.indices = []
-        for i in range(len(self.vertices)):
-            self.indices.append(np.array([i,(i+1)%len(self.vertices),(i+2)%len(self.vertices)]))
+        n = 0
+        for i in range(nsegments):
+            for j in range(nvertsegments):
+                theta1 = urange[i]*2*np.pi
+                theta2 = urange[i+1]*2*np.pi
+                y1 = bottom + vrange[j]*(top-bottom)
+                y2 = bottom + vrange[j+1]*(top-bottom)
+
+                x1 = radius*np.cos(theta1)
+                z1 = radius*np.sin(theta1)
+                x2 = radius*np.cos(theta2)
+                z2 = radius*np.sin(theta2)
+                self.vertices.append(np.array([x1,y1,z1]))
+                self.vertices.append(np.array([x1,y2,z1]))
+                self.vertices.append(np.array([x2,y1,z2]))
+                self.vertices.append(np.array([x2,y2,z2]))
+                self.texCoords.append(np.array([urange[i],vrange[j]]))
+                self.texCoords.append(np.array([urange[i],vrange[j+1]]))
+                self.texCoords.append(np.array([urange[i+1],vrange[j]]))
+                self.texCoords.append(np.array([urange[i+1],vrange[j+1]]))
+
+                self.indices.append(np.array([n,n+1,n+2]))
+                self.indices.append(np.array([n+1,n+2,n+3]))
+
+                n += 4
         self.vertices = np.stack(self.vertices,axis=0).astype(np.float32)
         self.texCoords = np.stack(self.texCoords,axis=0).astype(np.float32)
-        self.indices = np.stack(self.indices,axis=0).astype(np.uint16)
+        self.indices = np.stack(self.indices,axis=0).astype(np.uint32)
 
         self.texture = imread(texturepath)
+        if len(self.texture.shape) == 2:
+            self.texture = np.stack([self.texture]*3,axis=-1)
         self.texture = np.flipud(self.texture)
+
+        self.disparity = None
+        if disparitypath is not None:
+            self.disparity = imread(disparitypath)
+            print('disparity shape',self.disparity.shape)
+            self.disparity = np.flipud(self.disparity)
+
+class DepthCylinder(Mesh):
+    def __init__(self,height,radius,texturepath,disparitypath,nsegments=None,nvertsegments=None):
+        self.texture = imread(texturepath)
+        self.texture = np.flipud(self.texture)
+
+        disparity = imread(disparitypath).astype('float32')/255.
+        disparity = np.flipud(disparity)
+        H,W = disparity.shape
+
+        if nsegments is not None:
+            W = nsegments
+        if nvertsegments is not None:
+            H = nvertsegments
+        disparity = cv2.resize(disparity,(W,H),interpolation=cv2.INTER_LINEAR)
+        
+        bottom = -height/2
+        top = height/2
+
+        self.disparity = None
+        self.vertices = []
+        self.texCoords = []
+        self.indices = []
+        n = 0
+        for y in range(H-1):
+            v1 = y/(H-1)
+            v2 = (y+1)/(H-1)
+            for x in range(W):
+                u1 = x/(W-1)
+                u2 = ((x+1)%W)/(W-1)
+                
+                depth11 = 1./disparity[y,x]
+                depth12 = 1./disparity[y+1,x]
+                depth21 = 1./disparity[y,(x+1)%W]
+                depth22 = 1./disparity[y+1,(x+1)%W]
+                
+                theta1 = u1*2*np.pi
+                theta2 = u2*2*np.pi
+                y1 = bottom + v1*(top-bottom)
+                y2 = bottom + v2*(top-bottom)
+
+                x1 = radius*np.cos(theta1)
+                z1 = radius*np.sin(theta1)
+                x2 = radius*np.cos(theta2)
+                z2 = radius*np.sin(theta2)
+                
+                self.vertices.append(np.array([x1,y1,z1])*depth11)
+                self.texCoords.append(np.array([u1,v1]))
+
+                self.vertices.append(np.array([x1,y2,z1])*depth12)
+                self.texCoords.append(np.array([u1,v2]))
+
+                self.vertices.append(np.array([x2,y1,z2])*depth21)
+                self.texCoords.append(np.array([u2,v1]))
+
+                self.vertices.append(np.array([x2,y2,z2])*depth22)
+                self.texCoords.append(np.array([u2,v2]))
+
+                self.indices.append(np.array([n,n+1,n+2]))
+                self.indices.append(np.array([n+1,n+2,n+3]))
+
+                n += 4
+        self.vertices = np.stack(self.vertices,axis=0).astype(np.float32)
+        self.texCoords = np.stack(self.texCoords,axis=0).astype(np.float32)
+        self.indices = np.stack(self.indices,axis=0).astype(np.uint32)
 
 class Plane(Mesh):
     def __init__(self,depth,texturepath):
@@ -130,20 +279,23 @@ class Plane(Mesh):
         self.vertices = np.array(self.vertices).astype(np.float32)
         self.vertices *= depth
         self.texCoords = np.array(self.texCoords).astype(np.float32)
-        self.indices = np.array(self.indices).astype(np.uint16)
+        self.indices = np.array(self.indices).astype(np.uint32)
 
         self.texture = imread(texturepath)
         self.texture = np.flipud(self.texture)
 
 class Renderer:
-    def __init__(self,meshes,width,height,offscreen=False):
+    def __init__(self,meshes,width,height,disparity=False,offscreen=False):
         self.meshes = meshes
         self.width = width
         self.height = height
         self.offscreen = offscreen
     
-        shaderDict = {GL_VERTEX_SHADER: vert, GL_FRAGMENT_SHADER: frag}
-        
+        if not disparity :
+            shaderDict = {GL_VERTEX_SHADER: mpi_vert, GL_FRAGMENT_SHADER: mpi_frag}
+        else:
+            shaderDict = {GL_VERTEX_SHADER: depth_vert, GL_FRAGMENT_SHADER: depth_frag}
+
         self.initializeShaders(shaderDict)
         
         # Set the dimensions of the viewport
@@ -204,8 +356,11 @@ class Renderer:
         glUseProgram(self.shaderProgram)
         glUniformMatrix4fv(mvpUnif, 1, GL_TRUE, mvp)
 
-        samplerUnif = glGetUniformLocation(self.shaderProgram, "sampler")
-        glUniform1i(samplerUnif, 0)
+        tColorUnif = glGetUniformLocation(self.shaderProgram, "tColor")
+        glUniform1i(tColorUnif, 0)
+
+        tDisparityUnif = glGetUniformLocation(self.shaderProgram, "tDisparity")
+        glUniform1i(tDisparityUnif, 1)
 
         glUseProgram(0)
 
@@ -251,8 +406,12 @@ class Renderer:
 
         self.configureShaders(mvp)
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        if len(self.meshes)>1:
+            glEnable(GL_BLEND)
+            #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA) # pre-multiplied
+        else:
+            glDisable(GL_BLEND)
 
         glUseProgram(self.shaderProgram)
 
